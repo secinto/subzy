@@ -8,19 +8,19 @@ func BenchmarkMatchResponse(b *testing.B) {
 	config := &Config{
 		fingerprints: []Fingerprint{
 			{
-				Engine:        "Service1",
-				Fingerprint:   "error-message-1",
-				FalsePositive: []string{},
+				Service:     "Service1",
+				Fingerprint: "error-message-1",
+				Vulnerable:  true,
 			},
 			{
-				Engine:        "Service2",
-				Fingerprint:   "error-message-2",
-				FalsePositive: []string{"false-positive"},
+				Service:     "Service2",
+				Fingerprint: "error-message-2",
+				Vulnerable:  true,
 			},
 			{
-				Engine:        "Service3",
-				Fingerprint:   "error-message-3",
-				FalsePositive: []string{},
+				Service:     "Service3",
+				Fingerprint: "error-message-3",
+				Vulnerable:  true,
 			},
 		},
 	}
@@ -29,7 +29,7 @@ func BenchmarkMatchResponse(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		config.matchResponse(body)
+		config.matchResponse(body, 200)
 	}
 }
 
@@ -37,14 +37,14 @@ func BenchmarkMatchResponseNoMatch(b *testing.B) {
 	config := &Config{
 		fingerprints: []Fingerprint{
 			{
-				Engine:        "Service1",
-				Fingerprint:   "error-message-1",
-				FalsePositive: []string{},
+				Service:     "Service1",
+				Fingerprint: "error-message-1",
+				Vulnerable:  true,
 			},
 			{
-				Engine:        "Service2",
-				Fingerprint:   "error-message-2",
-				FalsePositive: []string{},
+				Service:     "Service2",
+				Fingerprint: "error-message-2",
+				Vulnerable:  true,
 			},
 		},
 	}
@@ -53,26 +53,26 @@ func BenchmarkMatchResponseNoMatch(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		config.matchResponse(body)
+		config.matchResponse(body, 200)
 	}
 }
 
-func BenchmarkMatchResponseWithFalsePositive(b *testing.B) {
+func BenchmarkMatchResponseWithNonVulnerable(b *testing.B) {
 	config := &Config{
 		fingerprints: []Fingerprint{
 			{
-				Engine:        "Service1",
-				Fingerprint:   "error-occurred",
-				FalsePositive: []string{"but-its-ok", "no-worries", "all-good"},
+				Service:     "Service1",
+				Fingerprint: "error-occurred",
+				Vulnerable:  false, // Not vulnerable despite matching
 			},
 		},
 	}
 
-	body := "error-occurred but-its-ok so everything is fine"
+	body := "error-occurred but not actually vulnerable"
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		config.matchResponse(body)
+		config.matchResponse(body, 200)
 	}
 }
 
@@ -81,9 +81,9 @@ func BenchmarkMatchResponseManyFingerprints(b *testing.B) {
 	fingerprints := make([]Fingerprint, 44)
 	for i := 0; i < 44; i++ {
 		fingerprints[i] = Fingerprint{
-			Engine:        "Service",
-			Fingerprint:   "unique-error",
-			FalsePositive: []string{},
+			Service:     "Service",
+			Fingerprint: "unique-error",
+			Vulnerable:  true,
 		}
 	}
 
@@ -95,7 +95,7 @@ func BenchmarkMatchResponseManyFingerprints(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		config.matchResponse(body)
+		config.matchResponse(body, 200)
 	}
 }
 

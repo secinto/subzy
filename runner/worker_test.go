@@ -10,18 +10,28 @@ func TestMatchResponse(t *testing.T) {
 	config := &Config{
 		fingerprints: []Fingerprint{
 			{
-				Engine:        "TestService",
+				Service:       "TestService",
 				Fingerprint:   "unique-error-message",
-				FalsePositive: []string{},
+				Vulnerable:    true,
 				Discussion:    "https://example.com/discussion",
 				Documentation: "https://example.com/docs",
+				CICDPass:      false,
+				CName:         []string{},
+				NXDomain:      false,
+				HTTPStatus:    nil,
+				Status:        "Vulnerable",
 			},
 			{
-				Engine:        "FalsePositiveService",
+				Service:       "FalsePositiveService",
 				Fingerprint:   "error-occurred",
-				FalsePositive: []string{"but-its-ok"},
+				Vulnerable:    false,
 				Discussion:    "https://example.com/discussion2",
 				Documentation: "https://example.com/docs2",
+				CICDPass:      false,
+				CName:         []string{},
+				NXDomain:      false,
+				HTTPStatus:    nil,
+				Status:        "Not vulnerable",
 			},
 		},
 	}
@@ -29,38 +39,38 @@ func TestMatchResponse(t *testing.T) {
 	tests := []struct {
 		name           string
 		body           string
+		statusCode     int
 		expectedStatus resultStatus
 	}{
 		{
 			name:           "vulnerable when fingerprint matches",
 			body:           "This page contains unique-error-message",
+			statusCode:     200,
 			expectedStatus: ResultVulnerable,
 		},
 		{
 			name:           "not vulnerable when no fingerprint matches",
 			body:           "This page has no matching fingerprint",
+			statusCode:     200,
 			expectedStatus: ResultNotVulnerable,
 		},
 		{
-			name:           "not vulnerable when false positive detected",
-			body:           "error-occurred but-its-ok",
+			name:           "not vulnerable when fingerprint matches but not marked vulnerable",
+			body:           "error-occurred",
+			statusCode:     200,
 			expectedStatus: ResultNotVulnerable,
-		},
-		{
-			name:           "vulnerable when fingerprint matches without false positive",
-			body:           "error-occurred without the ok string",
-			expectedStatus: ResultVulnerable,
 		},
 		{
 			name:           "empty body returns not vulnerable",
 			body:           "",
+			statusCode:     200,
 			expectedStatus: ResultNotVulnerable,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := config.matchResponse(tt.body)
+			result := config.matchResponse(tt.body, tt.statusCode)
 			if result.resStatus != tt.expectedStatus {
 				t.Errorf("matchResponse() status = %v, want %v", result.resStatus, tt.expectedStatus)
 			}
@@ -87,8 +97,16 @@ func TestCheckSubdomain(t *testing.T) {
 		Timeout:   10,
 		fingerprints: []Fingerprint{
 			{
-				Engine:      "TestEngine",
-				Fingerprint: "test-fingerprint",
+				Service:       "TestEngine",
+				Fingerprint:   "test-fingerprint",
+				Vulnerable:    true,
+				CICDPass:      false,
+				CName:         []string{},
+				NXDomain:      false,
+				HTTPStatus:    nil,
+				Status:        "Vulnerable",
+				Discussion:    "",
+				Documentation: "",
 			},
 		},
 	}
@@ -142,8 +160,16 @@ func TestCheckSubdomainWithHTTPSFlag(t *testing.T) {
 		Timeout:   10,
 		fingerprints: []Fingerprint{
 			{
-				Engine:      "TestEngine",
-				Fingerprint: "not-present",
+				Service:       "TestEngine",
+				Fingerprint:   "not-present",
+				Vulnerable:    true,
+				CICDPass:      false,
+				CName:         []string{},
+				NXDomain:      false,
+				HTTPStatus:    nil,
+				Status:        "Vulnerable",
+				Discussion:    "",
+				Documentation: "",
 			},
 		},
 	}

@@ -135,7 +135,7 @@ func processor(subdomainCh chan string, resCh chan *subdomainResult, c *Config, 
 		resCh <- &subdomainResult{
 			Subdomain:     subdomain,
 			Status:        string(result.resStatus),
-			Engine:        result.entry.Engine,
+			Engine:        result.entry.Service,
 			Documentation: result.entry.Documentation,
 			Discussion:    result.entry.Discussion,
 		}
@@ -145,7 +145,7 @@ func processor(subdomainCh chan string, resCh chan *subdomainResult, c *Config, 
 			c.logger.Error().
 				Str("subdomain", subdomain).
 				Str("status", "vulnerable").
-				Str("engine", result.entry.Engine).
+				Str("service", result.entry.Service).
 				Str("documentation", result.entry.Documentation).
 				Str("discussion", result.entry.Discussion).
 				Msg("Vulnerable subdomain detected")
@@ -153,7 +153,7 @@ func processor(subdomainCh chan string, resCh chan *subdomainResult, c *Config, 
 			// Console output for user
 			if c.LogFormat != "json" {
 				fmt.Print("-----------------\r\n")
-				fmt.Println("[ ", result.status, " ]", " - ", subdomain, " [ ", result.entry.Engine, " ] ")
+				fmt.Println("[ ", result.status, " ]", " - ", subdomain, " [ ", result.entry.Service, " ] ")
 				fmt.Println("[ ", aurora.Blue("DISCUSSION"), " ]", " - ", result.entry.Discussion)
 				fmt.Println("[ ", aurora.Blue("DOCUMENTATION"), " ]", " - ", result.entry.Documentation)
 				fmt.Print("-----------------\r\n")

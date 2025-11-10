@@ -46,8 +46,15 @@ func (c *Config) checkSubdomain(subdomain string) Result {
 
 	resp, err := c.client.Do(req)
 	if err != nil {
+		// Check for DNS resolution errors (NXDOMAIN)
+		if strings.Contains(err.Error(), "no such host") || strings.Contains(err.Error(), "server misbehaving") {
+			return c.matchNXDomain()
+		}
 		return Result{ResultHTTPError, aurora.Red("HTTP ERROR"), Fingerprint{}}
 	}
+
+	statusCode := resp.StatusCode
+
 	// Limit response body to 1MB to prevent memory exhaustion
 	limitedBody := io.LimitReader(resp.Body, 1024*1024)
 	body, err := io.ReadAll(limitedBody)
@@ -56,22 +63,50 @@ func (c *Config) checkSubdomain(subdomain string) Result {
 		return Result{ResultResponseError, aurora.Red("RESPONSE ERROR"), Fingerprint{}}
 	}
 
-	return c.matchResponse(string(body))
+	return c.matchResponse(string(body), statusCode)
 }
 
-func (c *Config) matchResponse(body string) Result {
+func (c *Config) matchResponse(body string, statusCode int) Result {
 	for _, fingerprint := range c.fingerprints {
-		if strings.Contains(body, fingerprint.Fingerprint) {
-			for _, falsePositiveString := range fingerprint.FalsePositive {
-				if len(falsePositiveString) > 0 {
-					if strings.Contains(body, falsePositiveString) {
-						return Result{ResultNotVulnerable, aurora.Red("NOT VULNERABLE"), Fingerprint{}}
-					}
-				}
+		// Skip NXDOMAIN-only fingerprints
+		if fingerprint.NXDomain && fingerprint.Fingerprint == "NXDOMAIN" {
+			continue
+		}
+
+		matched := false
+
+		// Check HTTP status code match if specified
+		if fingerprint.HTTPStatus != nil {
+			if statusCode == *fingerprint.HTTPStatus {
+				matched = true
 			}
+		}
+
+		// Check fingerprint string in body if specified
+		if fingerprint.Fingerprint != "" && fingerprint.Fingerprint != "NXDOMAIN" {
+			if strings.Contains(body, fingerprint.Fingerprint) {
+				matched = true
+			}
+		}
+
+		// If matched and marked as vulnerable, report it
+		if matched && fingerprint.Vulnerable {
 			return Result{ResultVulnerable, aurora.Green("VULNERABLE"), fingerprint}
 		}
 	}
 
 	return Result{ResultNotVulnerable, aurora.Red("NOT VULNERABLE"), Fingerprint{}}
+}
+
+func (c *Config) matchNXDomain() Result {
+	for _, fingerprint := range c.fingerprints {
+		// Check for NXDOMAIN fingerprints
+		if fingerprint.NXDomain && fingerprint.Fingerprint == "NXDOMAIN" {
+			if fingerprint.Vulnerable {
+				return Result{ResultVulnerable, aurora.Green("VULNERABLE"), fingerprint}
+			}
+		}
+	}
+
+	return Result{ResultHTTPError, aurora.Red("HTTP ERROR"), Fingerprint{}}
 }

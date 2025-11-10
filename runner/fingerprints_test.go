@@ -14,20 +14,28 @@ func TestFingerprintsLoading(t *testing.T) {
 	// Create a test fingerprints.json file
 	testFingerprints := []Fingerprint{
 		{
-			Engine:         "TestEngine1",
-			Status:         "vulnerable",
-			Fingerprint:    "error-message-1",
-			Discussion:     "https://example.com/discussion1",
-			Documentation:  "https://example.com/docs1",
-			FalsePositive:  []string{"false-positive-1"},
+			Service:       "TestEngine1",
+			Status:        "Vulnerable",
+			Fingerprint:   "error-message-1",
+			Discussion:    "https://example.com/discussion1",
+			Documentation: "https://example.com/docs1",
+			Vulnerable:    true,
+			CICDPass:      false,
+			CName:         []string{},
+			NXDomain:      false,
+			HTTPStatus:    nil,
 		},
 		{
-			Engine:         "TestEngine2",
-			Status:         "vulnerable",
-			Fingerprint:    "error-message-2",
-			Discussion:     "https://example.com/discussion2",
-			Documentation:  "https://example.com/docs2",
-			FalsePositive:  []string{},
+			Service:       "TestEngine2",
+			Status:        "Vulnerable",
+			Fingerprint:   "error-message-2",
+			Discussion:    "https://example.com/discussion2",
+			Documentation: "https://example.com/docs2",
+			Vulnerable:    true,
+			CICDPass:      false,
+			CName:         []string{},
+			NXDomain:      false,
+			HTTPStatus:    nil,
 		},
 	}
 
@@ -61,25 +69,25 @@ func TestFingerprintsLoading(t *testing.T) {
 	}
 
 	// Verify first fingerprint
-	if fingerprints[0].Engine != "TestEngine1" {
-		t.Errorf("Expected Engine 'TestEngine1', got %q", fingerprints[0].Engine)
+	if fingerprints[0].Service != "TestEngine1" {
+		t.Errorf("Expected Service 'TestEngine1', got %q", fingerprints[0].Service)
 	}
 
 	if fingerprints[0].Fingerprint != "error-message-1" {
 		t.Errorf("Expected Fingerprint 'error-message-1', got %q", fingerprints[0].Fingerprint)
 	}
 
-	if len(fingerprints[0].FalsePositive) != 1 {
-		t.Errorf("Expected 1 false positive, got %d", len(fingerprints[0].FalsePositive))
+	if !fingerprints[0].Vulnerable {
+		t.Errorf("Expected Vulnerable true, got false")
 	}
 
 	// Verify second fingerprint
-	if fingerprints[1].Engine != "TestEngine2" {
-		t.Errorf("Expected Engine 'TestEngine2', got %q", fingerprints[1].Engine)
+	if fingerprints[1].Service != "TestEngine2" {
+		t.Errorf("Expected Service 'TestEngine2', got %q", fingerprints[1].Service)
 	}
 
-	if len(fingerprints[1].FalsePositive) != 0 {
-		t.Errorf("Expected 0 false positives, got %d", len(fingerprints[1].FalsePositive))
+	if !fingerprints[1].Vulnerable {
+		t.Errorf("Expected Vulnerable true, got false")
 	}
 }
 
@@ -125,12 +133,16 @@ func TestFingerprintsInvalidJSON(t *testing.T) {
 func TestFingerprintStructTags(t *testing.T) {
 	// Test that JSON tags work correctly
 	jsonData := `[{
-		"engine": "TestEngine",
-		"status": "vulnerable",
+		"cicd_pass": true,
+		"cname": ["example.com"],
+		"service": "TestEngine",
+		"status": "Vulnerable",
 		"fingerprint": "test-fp",
 		"discussion": "test-discussion",
 		"documentation": "test-docs",
-		"false_positive": ["fp1", "fp2"]
+		"http_status": 404,
+		"nxdomain": false,
+		"vulnerable": true
 	}]`
 
 	var fingerprints []Fingerprint
@@ -150,8 +162,8 @@ func TestFingerprintStructTags(t *testing.T) {
 		got      string
 		expected string
 	}{
-		{"Engine", fp.Engine, "TestEngine"},
-		{"Status", fp.Status, "vulnerable"},
+		{"Service", fp.Service, "TestEngine"},
+		{"Status", fp.Status, "Vulnerable"},
 		{"Fingerprint", fp.Fingerprint, "test-fp"},
 		{"Discussion", fp.Discussion, "test-discussion"},
 		{"Documentation", fp.Documentation, "test-docs"},
@@ -165,7 +177,19 @@ func TestFingerprintStructTags(t *testing.T) {
 		})
 	}
 
-	if len(fp.FalsePositive) != 2 {
-		t.Errorf("Expected 2 false positives, got %d", len(fp.FalsePositive))
+	if !fp.Vulnerable {
+		t.Errorf("Expected Vulnerable true, got false")
+	}
+
+	if !fp.CICDPass {
+		t.Errorf("Expected CICDPass true, got false")
+	}
+
+	if len(fp.CName) != 1 {
+		t.Errorf("Expected 1 cname, got %d", len(fp.CName))
+	}
+
+	if fp.HTTPStatus == nil || *fp.HTTPStatus != 404 {
+		t.Errorf("Expected HTTPStatus 404, got %v", fp.HTTPStatus)
 	}
 }

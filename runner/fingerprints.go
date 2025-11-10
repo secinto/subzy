@@ -7,12 +7,16 @@ import (
 )
 
 type Fingerprint struct {
-	Engine         string   `json:"engine"`
-	Status         string   `json:"status"`
-	Fingerprint    string   `json:"fingerprint"`
-	Discussion     string   `json:"discussion"`
-	Documentation  string   `json:"documentation"`
-	FalsePositive  []string `json:"false_positive"`
+	CICDPass      bool     `json:"cicd_pass"`
+	CName         []string `json:"cname"`
+	Discussion    string   `json:"discussion"`
+	Documentation string   `json:"documentation"`
+	Fingerprint   string   `json:"fingerprint"`
+	HTTPStatus    *int     `json:"http_status"` // nullable int
+	NXDomain      bool     `json:"nxdomain"`
+	Service       string   `json:"service"`
+	Status        string   `json:"status"`
+	Vulnerable    bool     `json:"vulnerable"`
 }
 
 func Fingerprints() ([]Fingerprint, error) {
