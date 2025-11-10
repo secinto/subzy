@@ -4,6 +4,8 @@ import (
 	"crypto/tls"
 	"net/http"
 	"time"
+
+	"github.com/rs/zerolog"
 )
 
 type Config struct {
@@ -19,8 +21,18 @@ type Config struct {
 	Output       string
 	UserAgent    string
 	RateLimit    int
+
+	// Logging configuration
+	LogLevel     string
+	LogFormat    string
+	GraylogHost  string
+	GraylogApp   string
+	LogToFile    bool
+	LogFilePath  string
+
 	client       *http.Client
 	fingerprints []Fingerprint
+	logger       zerolog.Logger
 }
 
 func (s *Config) initHTTPClient() {
