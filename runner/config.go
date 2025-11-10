@@ -11,7 +11,6 @@ import (
 type Config struct {
 	HTTPS        bool
 	VerifySSL    bool
-	Emoji        bool
 	HideFails    bool
 	OnlyVuln     bool
 	Concurrency  int
