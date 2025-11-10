@@ -12,18 +12,14 @@ import (
 )
 
 func Process(config *Config) error {
-
-	fingerprints, err := Fingerprints()
-	if err != nil {
+	config.initHTTPClient()
+	if err := config.loadFingerprints(); err != nil {
 		return fmt.Errorf("Process: %v", err)
 	}
-
-	config.initHTTPClient()
-	config.loadFingerprints()
 	subdomains := getSubdomains(config)
 
 	fmt.Println("[ * ]", "Loaded", len(subdomains), "targets")
-	fmt.Println("[ * ]", "Loaded", len(fingerprints), "fingerprints")
+	fmt.Println("[ * ]", "Loaded", len(config.fingerprints), "fingerprints")
 	if config.Output != "" {
 		fmt.Printf("[ * ] Output filename: %s\n", config.Output)
 		fmt.Println(isEnabled(config.OnlyVuln), "Save only vulnerable subdomains")
@@ -35,20 +31,26 @@ func Process(config *Config) error {
 	fmt.Println("[", config.Timeout, "]", "HTTP request timeout (in seconds) (--timeout)")
 	fmt.Println(isEnabled(config.HideFails), "Show only potentially vulnerable subdomains (--hide_fails)")
 
-	subdomainCh := make(chan string, config.Concurrency+5)
+	subdomainCh := make(chan string, config.Concurrency*2)
 	resCh := make(chan *subdomainResult, config.Concurrency)
 
 	var wg sync.WaitGroup
 	wg.Add(config.Concurrency)
 
 	var results []*subdomainResult
+	var resultsMu sync.Mutex
+	var resultsWg sync.WaitGroup
+	resultsWg.Add(1)
 	go func() {
+		defer resultsWg.Done()
 		for r := range resCh {
 			if config.Output != "" {
 				if config.OnlyVuln && r.Status != ResultVulnerable {
 					continue
 				}
+				resultsMu.Lock()
 				results = append(results, r)
+				resultsMu.Unlock()
 			}
 		}
 	}()
@@ -66,6 +68,7 @@ func Process(config *Config) error {
 
 	wg.Wait()
 	close(resCh)
+	resultsWg.Wait()
 
 	if config.Output != "" {
 		f, err := os.OpenFile(config.Output, os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.ModePerm)
@@ -96,6 +99,7 @@ func processor(subdomainCh chan string, resCh chan *subdomainResult, c *Config, 
 			Status:        string(result.resStatus),
 			Engine:        result.entry.Engine,
 			Documentation: result.entry.Documentation,
+			Discussion:    result.entry.Discussion,
 		}
 
 		if result.status == aurora.Green("VULNERABLE") {
@@ -112,10 +116,6 @@ func processor(subdomainCh chan string, resCh chan *subdomainResult, c *Config, 
 			}
 		}
 	}
-}
-
-func generator(subdomain string, subdomainCh chan string) {
-	subdomainCh <- subdomain
 }
 
 func getSubdomains(c *Config) []string {

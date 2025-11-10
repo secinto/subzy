@@ -10,6 +10,6 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-func Execute() {
-	rootCmd.Execute()
+func Execute() error {
+	return rootCmd.Execute()
 }

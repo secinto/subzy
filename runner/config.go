@@ -17,13 +17,20 @@ type Config struct {
 	Targets      string
 	Target       string
 	Output       string
+	UserAgent    string
+	RateLimit    int
 	client       *http.Client
 	fingerprints []Fingerprint
 }
 
 func (s *Config) initHTTPClient() {
+	// Optimize connection pooling for concurrent requests
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: !s.VerifySSL},
+		TLSClientConfig:     &tls.Config{InsecureSkipVerify: !s.VerifySSL},
+		MaxIdleConns:        100,
+		MaxIdleConnsPerHost: s.Concurrency,
+		IdleConnTimeout:     90 * time.Second,
+		DisableKeepAlives:   false,
 	}
 
 	timeout := time.Duration(s.Timeout) * time.Second

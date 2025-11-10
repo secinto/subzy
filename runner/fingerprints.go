@@ -7,12 +7,12 @@ import (
 )
 
 type Fingerprint struct {
-	Engine        		string
-	Status        		string
-	Fingerprint  		string
-	Discussion    		string
-	Documentation 		string
-	False_Positive 		[]string
+	Engine         string   `json:"engine"`
+	Status         string   `json:"status"`
+	Fingerprint    string   `json:"fingerprint"`
+	Discussion     string   `json:"discussion"`
+	Documentation  string   `json:"documentation"`
+	FalsePositive  []string `json:"false_positive"`
 }
 
 func Fingerprints() ([]Fingerprint, error) {

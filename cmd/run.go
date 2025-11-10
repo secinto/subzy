@@ -16,6 +16,29 @@ var runCmd = &cobra.Command{
 	Short:   "Run subzy",
 	Aliases: []string{"r"},
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// Input validation
+		if opts.Target == "" && opts.Targets == "" {
+			return fmt.Errorf("either --target or --targets must be specified")
+		}
+
+		if opts.Target != "" && opts.Targets != "" {
+			return fmt.Errorf("cannot specify both --target and --targets")
+		}
+
+		if opts.Targets != "" {
+			if _, err := os.Stat(opts.Targets); err != nil {
+				return fmt.Errorf("targets file does not exist: %v", err)
+			}
+		}
+
+		if opts.Concurrency <= 0 {
+			return fmt.Errorf("concurrency must be greater than 0")
+		}
+
+		if opts.Timeout <= 0 {
+			return fmt.Errorf("timeout must be greater than 0")
+		}
+
 		fingerprintsPath, err := runner.GetFingerprintPath()
 		if err != nil {
 			return err
@@ -39,6 +62,7 @@ func init() {
 	runCmd.Flags().StringVar(&opts.Target, "target", "", "Comma separated list of domains")
 	runCmd.Flags().StringVar(&opts.Targets, "targets", "", "File containing the list of subdomains")
 	runCmd.Flags().StringVar(&opts.Output, "output", "", "JSON output filename")
+	runCmd.Flags().StringVar(&opts.UserAgent, "user-agent", "", "Custom User-Agent string (default: Subzy/1.1.0)")
 	runCmd.Flags().BoolVar(&opts.HTTPS, "https", false, "Force https protocol if not no protocol defined for target (default false)")
 	runCmd.Flags().BoolVar(&opts.VerifySSL, "verify_ssl", false, "If set to true it won't check sites with insecure SSL and return HTTP Error")
 	runCmd.Flags().BoolVar(&opts.HideFails, "hide_fails", false, "Don't display failed results")

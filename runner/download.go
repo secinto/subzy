@@ -16,21 +16,21 @@ import (
 var (
 	fingerprintPath = "https://raw.githubusercontent.com/LukaSikic/subzy/master/runner/fingerprints.json"
 	subzyDir        = "subzy"
-)
-
-func GetFingerprintPath() (string, error) {
-	home, err := homedir.Dir()
-	if err != nil {
-		return "", fmt.Errorf("GetFingerprintPath: %v", err)
-	}
-	dirPath := filepath.Join(home, subzyDir)
-	if _, err := os.Stat(dirPath); errors.Is(err, fs.ErrNotExist) {
-		if err := os.Mkdir(dirPath, os.ModePerm); err != nil {
-			return "", err
+	// GetFingerprintPath is a variable to allow overriding in tests
+	GetFingerprintPath = func() (string, error) {
+		home, err := homedir.Dir()
+		if err != nil {
+			return "", fmt.Errorf("GetFingerprintPath: %v", err)
 		}
+		dirPath := filepath.Join(home, subzyDir)
+		if _, err := os.Stat(dirPath); errors.Is(err, fs.ErrNotExist) {
+			if err := os.Mkdir(dirPath, os.ModePerm); err != nil {
+				return "", err
+			}
+		}
+		return path.Join(dirPath, "fingerprints.json"), nil
 	}
-	return path.Join(dirPath, "fingerprints.json"), nil
-}
+)
 
 func downloadFingerprints(fingerprintsPath string) error {
 	out, err := os.OpenFile(fingerprintsPath, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, os.ModePerm)
@@ -47,7 +47,7 @@ func downloadFingerprints(fingerprintsPath string) error {
 
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
-		fmt.Errorf("downloadFingerprints: %v", err)
+		return fmt.Errorf("downloadFingerprints: %v", err)
 	}
 
 	return nil
