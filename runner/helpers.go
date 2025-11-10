@@ -3,7 +3,7 @@ package runner
 import "net/url"
 
 func isEnabled(setting bool) string {
-	if setting == true {
+	if setting {
 		return "[ Yes ]"
 	}
 	return "[ No ]"
@@ -11,11 +11,7 @@ func isEnabled(setting bool) string {
 
 func isValidUrl(toTest string) bool {
 	_, err := url.ParseRequestURI(toTest)
-	if err != nil {
-		return false
-	} else {
-		return true
-	}
+	return err == nil
 }
 
 type subdomainResult struct {

@@ -4,6 +4,8 @@ import (
 	"crypto/tls"
 	"net/http"
 	"time"
+
+	"github.com/rs/zerolog"
 )
 
 type Config struct {
@@ -17,13 +19,30 @@ type Config struct {
 	Targets      string
 	Target       string
 	Output       string
+	UserAgent    string
+	RateLimit    int
+
+	// Logging configuration
+	LogLevel     string
+	LogFormat    string
+	GraylogHost  string
+	GraylogApp   string
+	LogToFile    bool
+	LogFilePath  string
+
 	client       *http.Client
 	fingerprints []Fingerprint
+	logger       zerolog.Logger
 }
 
 func (s *Config) initHTTPClient() {
+	// Optimize connection pooling for concurrent requests
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: !s.VerifySSL},
+		TLSClientConfig:     &tls.Config{InsecureSkipVerify: !s.VerifySSL},
+		MaxIdleConns:        100,
+		MaxIdleConnsPerHost: s.Concurrency,
+		IdleConnTimeout:     90 * time.Second,
+		DisableKeepAlives:   false,
 	}
 
 	timeout := time.Duration(s.Timeout) * time.Second
