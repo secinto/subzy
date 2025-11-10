@@ -153,3 +153,10 @@ build/*
 *.syso
 
 .idea
+
+# Binary
+subzy
+
+# Test coverage files
+coverage.out
+coverage.html
