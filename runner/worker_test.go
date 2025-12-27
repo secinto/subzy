@@ -60,7 +60,7 @@ func TestMatchResponse(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := config.matchResponse(tt.body)
+			result := config.matchResponse([]byte(tt.body))
 			if result.resStatus != tt.expectedStatus {
 				t.Errorf("matchResponse() status = %v, want %v", result.resStatus, tt.expectedStatus)
 			}

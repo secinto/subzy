@@ -14,20 +14,20 @@ func TestFingerprintsLoading(t *testing.T) {
 	// Create a test fingerprints.json file
 	testFingerprints := []Fingerprint{
 		{
-			Engine:         "TestEngine1",
-			Status:         "vulnerable",
-			Fingerprint:    "error-message-1",
-			Discussion:     "https://example.com/discussion1",
-			Documentation:  "https://example.com/docs1",
-			FalsePositive:  []string{"false-positive-1"},
+			Engine:        "TestEngine1",
+			Status:        "vulnerable",
+			Fingerprint:   "error-message-1",
+			Discussion:    "https://example.com/discussion1",
+			Documentation: "https://example.com/docs1",
+			FalsePositive: []string{"false-positive-1"},
 		},
 		{
-			Engine:         "TestEngine2",
-			Status:         "vulnerable",
-			Fingerprint:    "error-message-2",
-			Discussion:     "https://example.com/discussion2",
-			Documentation:  "https://example.com/docs2",
-			FalsePositive:  []string{},
+			Engine:        "TestEngine2",
+			Status:        "vulnerable",
+			Fingerprint:   "error-message-2",
+			Discussion:    "https://example.com/discussion2",
+			Documentation: "https://example.com/docs2",
+			FalsePositive: []string{},
 		},
 	}
 

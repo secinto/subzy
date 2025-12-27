@@ -25,7 +25,7 @@ func BenchmarkMatchResponse(b *testing.B) {
 		},
 	}
 
-	body := "This is a test response body that contains error-message-2 and some other text to make it realistic"
+	body := []byte("This is a test response body that contains error-message-2 and some other text to make it realistic")
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -49,7 +49,7 @@ func BenchmarkMatchResponseNoMatch(b *testing.B) {
 		},
 	}
 
-	body := "This is a test response body with no matching fingerprints"
+	body := []byte("This is a test response body with no matching fingerprints")
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -68,7 +68,7 @@ func BenchmarkMatchResponseWithFalsePositive(b *testing.B) {
 		},
 	}
 
-	body := "error-occurred but-its-ok so everything is fine"
+	body := []byte("error-occurred but-its-ok so everything is fine")
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -91,7 +91,7 @@ func BenchmarkMatchResponseManyFingerprints(b *testing.B) {
 		fingerprints: fingerprints,
 	}
 
-	body := "This is a test response body with no matching fingerprints but lots of text to process"
+	body := []byte("This is a test response body with no matching fingerprints but lots of text to process")
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

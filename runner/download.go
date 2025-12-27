@@ -24,7 +24,7 @@ var (
 		}
 		dirPath := filepath.Join(home, subzyDir)
 		if _, err := os.Stat(dirPath); errors.Is(err, fs.ErrNotExist) {
-			if err := os.Mkdir(dirPath, os.ModePerm); err != nil {
+			if err := os.Mkdir(dirPath, 0700); err != nil {
 				return "", err
 			}
 		}
@@ -33,7 +33,7 @@ var (
 )
 
 func downloadFingerprints(fingerprintsPath string) error {
-	out, err := os.OpenFile(fingerprintsPath, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, os.ModePerm)
+	out, err := os.OpenFile(fingerprintsPath, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0600)
 	if err != nil {
 		return fmt.Errorf("downloadFingerprints: %v", err)
 	}

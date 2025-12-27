@@ -55,10 +55,10 @@ func InitLogger(cfg LogConfig) (zerolog.Logger, error) {
 		writers = append(writers, &gelfLogWriter{writer: gelfWriter})
 	}
 
-	// File output
+	// File output with secure permissions (owner read/write only)
 	if cfg.EnableFile && cfg.FilePath != "" {
 		file, err := os.OpenFile(cfg.FilePath,
-			os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+			os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 		if err != nil {
 			return zerolog.Logger{}, fmt.Errorf("failed to open log file: %w", err)
 		}

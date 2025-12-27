@@ -8,27 +8,26 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// Config holds the configuration for subdomain scanning
 type Config struct {
-	HTTPS        bool
-	VerifySSL    bool
-	Emoji        bool
-	HideFails    bool
-	OnlyVuln     bool
-	Concurrency  int
-	Timeout      int
-	Targets      string
-	Target       string
-	Output       string
-	UserAgent    string
-	RateLimit    int
+	HTTPS       bool
+	VerifySSL   bool
+	HideFails   bool
+	OnlyVuln    bool
+	Concurrency int
+	Timeout     int
+	Targets     string
+	Target      string
+	Output      string
+	UserAgent   string
 
 	// Logging configuration
-	LogLevel     string
-	LogFormat    string
-	GraylogHost  string
-	GraylogApp   string
-	LogToFile    bool
-	LogFilePath  string
+	LogLevel    string
+	LogFormat   string
+	GraylogHost string
+	GraylogApp  string
+	LogToFile   bool
+	LogFilePath string
 
 	client       *http.Client
 	fingerprints []Fingerprint
@@ -36,9 +35,14 @@ type Config struct {
 }
 
 func (s *Config) initHTTPClient() {
-	// Optimize connection pooling for concurrent requests
+	// Note: InsecureSkipVerify defaults to true (!s.VerifySSL) for security scanning
+	// because many targets have self-signed or expired certificates.
+	// Use --verify_ssl flag to enable strict TLS verification.
 	tr := &http.Transport{
-		TLSClientConfig:     &tls.Config{InsecureSkipVerify: !s.VerifySSL},
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: !s.VerifySSL,
+			MinVersion:         tls.VersionTLS12,
+		},
 		MaxIdleConns:        100,
 		MaxIdleConnsPerHost: s.Concurrency,
 		IdleConnTimeout:     90 * time.Second,

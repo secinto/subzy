@@ -3,7 +3,6 @@ package runner
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"sync"
@@ -30,7 +29,11 @@ func Process(config *Config) error {
 	if err := config.loadFingerprints(); err != nil {
 		return fmt.Errorf("Process: %v", err)
 	}
-	subdomains := getSubdomains(config)
+
+	subdomains, err := getSubdomains(config)
+	if err != nil {
+		return fmt.Errorf("Process: failed to get subdomains: %w", err)
+	}
 
 	// Log scan configuration
 	logger.Info().
@@ -67,20 +70,18 @@ func Process(config *Config) error {
 	var wg sync.WaitGroup
 	wg.Add(config.Concurrency)
 
+	// Results collector - single goroutine, no mutex needed
 	var results []*subdomainResult
-	var resultsMu sync.Mutex
 	var resultsWg sync.WaitGroup
 	resultsWg.Add(1)
 	go func() {
 		defer resultsWg.Done()
 		for r := range resCh {
 			if config.Output != "" {
-				if config.OnlyVuln && r.Status != ResultVulnerable {
+				if config.OnlyVuln && r.Status != string(ResultVulnerable) {
 					continue
 				}
-				resultsMu.Lock()
 				results = append(results, r)
-				resultsMu.Unlock()
 			}
 		}
 	}()
@@ -101,7 +102,7 @@ func Process(config *Config) error {
 	resultsWg.Wait()
 
 	if config.Output != "" {
-		f, err := os.OpenFile(config.Output, os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+		f, err := os.OpenFile(config.Output, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 		if err != nil {
 			return err
 		}
@@ -140,7 +141,8 @@ func processor(subdomainCh chan string, resCh chan *subdomainResult, c *Config, 
 			Discussion:    result.entry.Discussion,
 		}
 
-		if result.status == aurora.Green("VULNERABLE") {
+		// Use resStatus for comparison instead of aurora.Value
+		if result.resStatus == ResultVulnerable {
 			// Log vulnerability with structured data
 			c.logger.Error().
 				Str("subdomain", subdomain).
@@ -180,15 +182,10 @@ func processor(subdomainCh chan string, resCh chan *subdomainResult, c *Config, 
 	}
 }
 
-func getSubdomains(c *Config) []string {
+// getSubdomains returns list of subdomains from config
+func getSubdomains(c *Config) ([]string, error) {
 	if c.Target == "" {
-		subdomains, err := readSubdomains(c.Targets)
-		if err != nil {
-			log.Fatalf("Error reading subdomains: %s", err)
-		}
-
-		return subdomains
+		return readSubdomains(c.Targets)
 	}
-
-	return strings.Split(c.Target, ",")
+	return strings.Split(c.Target, ","), nil
 }
